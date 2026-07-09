@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>hack//ops</title>
+<meta name="description" content="hack//ops runs experimental hackathons in karlsruhe. karlsruhe builds here." />
+<meta property="og:title" content="hack//ops" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="karlsruhe builds here. experimental hackathons by students, printed on one endless desktop." />
+<meta property="og:image" content="https://hackops.tech/assets/op000-hero.jpg" />
+<meta property="og:url" content="https://hackops.tech" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Press+Start+2P&family=Hanken+Grotesk:wght@400;500;600;700&family=Fragment+Mono&display=swap" rel="stylesheet" />
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="%23fdf7fa"/><polygon points="16,4 29,27 3,27" fill="none" stroke="%23ef7fb1" stroke-width="2.5"/></svg>' />
+<link rel="preload" href="assets/good-times.otf" as="font" type="font/otf" crossorigin />
+<link rel="stylesheet" href="site.css?v=desktop-4" />
+<script>
+  /* apply the saved theme before first paint so there is no flash */
+  (function () {
+    try {
+      var t = localStorage.getItem('hackops-theme');
+      if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<noscript>
+  <div class="ns">
+    <p><strong>hack//ops</strong> · karlsruhe builds here.</p>
+    <p>This site is one big zoomable desktop and needs JavaScript to fly.
+       The short version: we are a Karlsruhe student group running experimental
+       hackathons. First up: op//002 slopathon, summer 2026.</p>
+  </div>
+</noscript>
+
+<div id="stage">
+  <canvas id="grid" aria-hidden="true"></canvas>
+
+  <!-- ==============================================================
+       THE WORLD: an endless pastel desktop. Anything with data-x /
+       data-y is a placed container, anchored by its center.
+       data-x / data-y   world coordinates of the center
+       data-rot          rotation about the center, degrees
+       data-scale        world scale of the element (default 1)
+       data-stop="id"    makes it a camera keyframe; tour = document order
+       data-vw / data-vh the world rect the camera frames at landing
+       data-bearing      camera roll at landing, degrees
+       THE TOUR: home, then a 50x microscope dive into the microprint,
+       pull out and pan to the manifesto, the ops cluster, crew, the
+       join dialog, then the full desktop.
+       ============================================================== -->
+  <div id="world">
+
+    <!-- 01 HOME: ink printed straight on the desktop -->
+    <section class="stop-home" data-stop="home" data-label="hack//ops"
+             data-x="6000" data-y="5400" data-vw="1600" data-vh="1100" data-bearing="0">
+      <p class="home-tag">karlsruhe builds here.</p>
+      <h1 class="home-title">hack<b>//</b>ops</h1>
+      <p class="home-blurb">
+        <b>hack//ops</b> runs experimental hackathons in karlsruhe<br />
+        <b>hack//ops</b> turns students into builders and builders into a scene<br />
+        <b>hack//ops</b> is the fast lane of the karlsruhe tech ecosystem
+      </p>
+      <div class="runs-list">
+        <span>hack//ops runs <b style="color:var(--pink)">slopathons</b></span>
+        <span>hack//ops runs <b style="color:var(--silver)">hardware jams</b></span>
+        <span>hack//ops runs <b style="color:var(--purple)">agent gauntlets</b></span>
+        <span>hack//ops runs <b style="color:var(--red)">build fridays</b></span>
+        <span>hack//ops runs <b style="color:var(--gold)">benchmarks</b></span>
+        <span>hack//ops runs <b style="color:var(--sky)">co-working</b></span>
+        <span>hack//ops runs <b style="color:var(--pink)">prototypes</b></span>
+        <span>hack//ops runs <b style="color:var(--purple)">experiments</b></span>
+        <span>hack//ops runs <b style="color:var(--gold)">karlsruhe</b></span>
+      </div>
+      <p class="home-foot">scroll to fly · 49.0069 N · 8.4037 E</p>
+    </section>
+
+    <!-- the signup dialog: pinned into the home view, impossible to miss -->
+    <section class="win announce-win" style="--tbar: var(--pink)"
+             data-x="6540" data-y="5060" data-rot="4">
+      <div class="win-title"><span class="t">op002_signup.exe</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <p class="mono">incoming transmission</p>
+        <h2>slopathon is live.</h2>
+        <p>Our first operation is open for registration. Karlsruhe,
+           free, builders only.</p>
+        <a class="luma-btn" data-interactive href="https://luma.com/zxavzf5b"
+           target="_blank" rel="noopener">sign up on lu.ma<span class="sub">op//002 · slopathon</span></a>
+      </div>
+    </section>
+
+    <!-- 02 MICROPRINT: a whole page at 2% scale, hidden under the litany -->
+    <section class="microprint" data-stop="op000" data-label="op//000"
+             data-x="6001" data-y="6062" data-scale="0.02"
+             data-vw="13" data-vh="10" data-bearing="0">
+      <h3>op<b>//</b>000 · the microprint</h3>
+      <p>You just zoomed in fifty times. This is the smallest print on the
+         desktop, and only the curious ever land on it.</p>
+      <p>Tell an operator the word <strong>microprint</strong> at the next
+         event. They will know what it means.</p>
+      <p class="mono">karlsruhe builds here.</p>
+    </section>
+
+    <!-- 03 MANIFESTO -->
+    <section class="win" style="--tbar: var(--purple); width: 860px"
+             data-stop="manifesto" data-label="manifesto"
+             data-x="4150" data-y="6750" data-rot="-11" data-bearing="-11"
+             data-vw="980" data-vh="760">
+      <div class="win-title"><span class="t">manifesto.txt</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <h2>community first. mainstream last.</h2>
+        <p><strong>hack//ops is a student group in karlsruhe</strong> that runs
+           the hackathon formats that do not fit anywhere else. No corporate
+           pitch decks, no quid pro quo. We build because building together
+           is the point.</p>
+        <p>We are the accelerated r&amp;d lab of the karlsruhe tech ecosystem:
+           a crew of techies who are not scared of risk, breaking away from
+           the mainstream event format one operation at a time.</p>
+        <div class="rules">
+          <div style="--rc: var(--pink)"><span class="n">rule_01</span><span class="r">ship it, then talk about it.</span></div>
+          <div style="--rc: var(--purple)"><span class="n">rule_02</span><span class="r">community is the moat.</span></div>
+          <div style="--rc: var(--sky)"><span class="n">rule_03</span><span class="r">experimental formats over safe formats.</span></div>
+          <div style="--rc: var(--gold)"><span class="n">rule_04</span><span class="r">just let them eat pcbs.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 OPERATIONS: four event windows scattered in a cluster -->
+    <div class="ops-head deco" data-x="8060" data-y="6060" data-rot="-2">the <b>op</b> series</div>
+
+    <section class="win op-win" style="--tbar: var(--pink); --sc: var(--pink)"
+             data-x="7480" data-y="6800" data-rot="6">
+      <div class="win-title"><span class="t">op002_slopathon.exe</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <img src="assets/op002-slopathon.jpg" alt="op002 slopathon poster: pink desktop windows with a wireframe pyramid" />
+      <div class="win-body">
+        <h3>slopathon</h3>
+        <p>Whoever slops the most, wins. Build the most gloriously cursed,
+           over-engineered, useless-but-working prototype you can. No pitch
+           decks, no recruiter booths. Our opening operation.</p>
+        <span class="status live">registration open</span>
+        <a class="luma-btn" data-interactive href="https://luma.com/zxavzf5b"
+           target="_blank" rel="noopener">sign up on lu.ma<span class="sub">op//002 · karlsruhe · free</span></a>
+      </div>
+    </section>
+
+    <section class="win op-win" style="--tbar: var(--silver)"
+             data-x="8560" data-y="6760" data-rot="-5">
+      <div class="win-title"><span class="t">op001_bare_metal.exe</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <h3>bare metal</h3>
+        <p>Hardware hackathon. Solder, sensors, silicon. If it does not
+           physically exist, it does not count.</p>
+        <span class="status">in planning</span>
+      </div>
+    </section>
+
+    <section class="win op-win" style="--tbar: var(--purple)"
+             data-x="7540" data-y="7680" data-rot="-4">
+      <div class="win-title"><span class="t">op003_agent_gauntlet.exe</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <h3>agent gauntlet</h3>
+        <p>Your agents versus everyone else's. Vibes do not ship.
+           Benchmarks do.</p>
+        <span class="status">in planning</span>
+      </div>
+    </section>
+
+    <section class="win op-win" style="--tbar: var(--red)"
+             data-x="8620" data-y="7720" data-rot="5">
+      <div class="win-title"><span class="t">op004_build_friday.exe</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <h3>build friday</h3>
+        <p>"I compile, therefore I am." Recurring co-working and
+           show-and-tell nights. Bring a project, leave with three.</p>
+        <span class="status">in planning</span>
+      </div>
+    </section>
+
+    <!-- the ops camera stop frames the whole cluster -->
+    <div class="stop-field" data-stop="ops" data-label="operations"
+         data-x="8050" data-y="7100" data-vw="2100" data-vh="1750" data-bearing="4"></div>
+
+    <!-- 05 CREW -->
+    <section class="win crew-win" style="--tbar: var(--sky)"
+             data-stop="crew" data-label="crew"
+             data-x="5250" data-y="4250" data-rot="5" data-bearing="5"
+             data-vw="760" data-vh="640">
+      <div class="win-title"><span class="t">crew // operators</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <h2>operators.</h2>
+        <p>A growing crew of karlsruhe students, backed by the local
+           ecosystem. Partners and sponsors are announced with each
+           operation.</p>
+        <div class="crew-rows">
+          <div><span class="nm">marko nedilko</span><span class="rl" style="--cc: var(--pink)">founder · ops</span></div>
+          <div><span class="nm">sebastian kallfelz</span><span class="rl">core team</span></div>
+          <div><span class="nm">pascal schneider</span><span class="rl">core team</span></div>
+          <div><span class="nm">milan ferus-comelo</span><span class="rl">core team</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 EXPLORE: the whole desktop -->
+    <div class="stop-field" data-stop="field" data-label="explore"
+         data-x="6400" data-y="6000" data-vw="6200" data-vh="4600" data-bearing="0"></div>
+
+    <!-- ================= desktop decoration ================= -->
+
+    <div class="silkprint deco" data-x="6300" data-y="7900" data-rot="0">karlsruhe builds here.</div>
+
+    <section class="win wallpaper-win deco" style="--tbar: var(--sky)"
+             data-x="4620" data-y="5150" data-rot="-8">
+      <div class="win-title"><span class="t">wallpaper.jpg - viewer</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <img src="assets/op000-hero-crop.jpg" alt="chrome pyramid station floating in a blue sky" />
+      <div class="cap">op000_render.png · 3d, not ai · blender</div>
+    </section>
+
+    <section class="win pyr-win deco" style="--tbar: var(--purple)"
+             data-x="5150" data-y="7550" data-rot="9">
+      <div class="win-title"><span class="t">pyramid1.fbx</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" fill="none"
+             stroke="#85bede" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M100 18 L172 118 L28 118 Z" />
+          <path d="M100 18 L118 132 M28 118 L118 132 L172 118" />
+        </svg>
+      </div>
+    </section>
+
+    <section class="win load-win deco" style="--tbar: var(--gold)"
+             data-x="6900" data-y="7480" data-rot="-3">
+      <div class="win-title"><span class="t">copying karlsruhe.zip</span><span class="b">_</span><span class="b">&#9633;</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <p class="lbl">building community... 68%</p>
+        <div class="load-bar">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i>
+        </div>
+      </div>
+    </section>
+
+    <section class="win err-win deco" style="--tbar: var(--red)"
+             data-x="8720" data-y="5250" data-rot="10">
+      <div class="win-title"><span class="t">error</span><span class="b">&times;</span></div>
+      <div class="win-body">
+        <span class="err-glyph">!</span>
+        <p>not_a_bug.exe: it's a feature. <br /><strong>[ ok ]</strong></p>
+      </div>
+    </section>
+
+    <div class="dicon deco" data-x="4280" data-y="4180" data-rot="0" style="--dc: var(--gold)">
+      <span class="px folder"></span><span class="lbl">my_hackathon</span>
+    </div>
+    <div class="dicon deco" data-x="8950" data-y="4520" data-rot="0" style="--dc: var(--sky)">
+      <span class="px doc"></span><span class="lbl">readme.txt</span>
+    </div>
+    <div class="dicon deco" data-x="4420" data-y="8150" data-rot="0" style="--dc: var(--pink)">
+      <span class="px pyra"></span><span class="lbl">slop.exe</span>
+    </div>
+    <div class="dicon deco" data-x="9300" data-y="7480" data-rot="0" style="--dc: var(--purple)">
+      <span class="px folder"></span><span class="lbl">op_series</span>
+    </div>
+    <div class="dicon deco" data-x="6180" data-y="3620" data-rot="0" style="--dc: var(--silver)">
+      <span class="px doc"></span><span class="lbl">sponsors.tba</span>
+    </div>
+
+  </div>
+</div>
+
+<header>
+  <button class="wordmark" type="button" data-interactive
+          onclick="hackops.flyTo('home')">hack<b>//</b>ops</button>
+  <nav id="stops-nav" aria-label="Stops" data-interactive></nav>
+  <a class="chip cta-luma" data-interactive href="https://luma.com/zxavzf5b"
+     target="_blank" rel="noopener">slopathon signup</a>
+  <button id="modebtn" class="mode-toggle" type="button" data-interactive
+          aria-label="Toggle dark mode"><span class="dot" aria-hidden="true"></span><span id="modelbl">dark mode</span></button>
+</header>
+
+<footer aria-hidden="true">
+  <div id="hud">X 00000 · Y 00000 · FIELD 00000</div>
+</footer>
+
+<div id="hint">SCROLL TO FLY</div>
+
+<button id="nextbtn" type="button" data-interactive aria-label="Next stop">&rarr;</button>
+
+<div id="camctl" data-interactive role="group" aria-label="Camera controls">
+  <button id="zin" type="button" title="Zoom in">+</button>
+  <button id="zout" type="button" title="Zoom out">&minus;</button>
+  <button id="lvl" type="button" title="Level the camera">&deg;</button>
+</div>
+
+<script src="engine.js?v=desktop-2"></script>
+</body>
+</html>

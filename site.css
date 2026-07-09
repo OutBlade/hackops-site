@@ -1,0 +1,610 @@
+/* ============================================================
+   hack//ops - site v2 · "the desktop"
+   One endless retro desktop, fab2-style: light paper, one warm
+   grey ink, no black, poster accents as discrete blocks. The
+   camera scrolls, the page never does. Lowercase display type,
+   pixel type only for window chrome.
+   ============================================================ */
+
+/* the poster font: Good Times by Typodermic (freeware), caps-only,
+   used for the HACK//OPS wordmark exactly like on the OP posters */
+@font-face {
+  font-family: 'Good Times';
+  src: url('assets/good-times.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --paper:    #ffffff;
+  --sunken:   #fdf7fa;          /* the desktop itself, a breath of pink */
+  --ink:      #93838c;          /* the one grey, warm with a pink cast */
+  --ink-body: #61555c;          /* readable dense copy, still not black */
+  --ink-2:    #b3a6ad;          /* decoration only */
+  --line:     #f2e7ed;
+  --line-2:   #e2d3db;
+  --grid:     #fbe9f2;          /* minor desktop grid */
+  --grid-2:   #f6d9e8;          /* major desktop grid */
+  --chrome-bg: rgba(255, 255, 255, 0.94);
+  --chrome-edge: rgba(147, 131, 140, 0.22);
+  --pane-shadow: 0 14px 34px -26px rgba(97, 85, 92, 0.55);
+
+  /* poster accents: slop pink, win95 purple, op000 sky,
+     chrome silver, build-friday red, loading-bar gold */
+  --pink:   #ef7fb1;
+  --purple: #9c8ae0;
+  --sky:    #85bede;
+  --silver: #a8adbd;
+  --red:    #e07070;
+  --gold:   #e5c04d;
+
+  --font-display: 'Orbitron', 'Arial Black', sans-serif;
+  --font-brand:   'Good Times', 'Orbitron', 'Arial Black', sans-serif;
+  --font-body:    'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono:    'Fragment Mono', ui-monospace, Menlo, monospace;
+  --font-pixel:   'Press Start 2P', 'Fragment Mono', monospace;
+
+  --header-h: 52px;
+}
+
+/* dark mode: the midnight print. Same one-grey discipline, same
+   accents, the desktop just switches off the lights. Toggled by
+   the taskbar button (html.dark + localStorage). */
+html.dark {
+  --paper:    #1d1820;
+  --sunken:   #141017;
+  --ink:      #9a8b94;
+  --ink-body: #d9cfd6;
+  --ink-2:    #6f6169;
+  --line:     #2b242e;
+  --line-2:   #3c333f;
+  --grid:     #201a24;
+  --grid-2:   #2c2230;
+  --chrome-bg: rgba(20, 16, 23, 0.92);
+  --chrome-edge: rgba(154, 139, 148, 0.25);
+  --pane-shadow: 0 14px 34px -22px rgba(0, 0, 0, 0.8);
+}
+html.dark .win {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    var(--pane-shadow);
+}
+html.dark .silkprint { color: rgba(217, 207, 214, 0.05); }
+html.dark .wallpaper-win img,
+html.dark .op-win img { filter: brightness(0.88); }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  height: 100%;
+  overflow: hidden;              /* the camera scrolls, the page never does */
+  overscroll-behavior: none;
+  background: var(--sunken);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+::selection { background: var(--pink); color: #fff; }
+
+/* ---------------- stage ---------------- */
+#stage {
+  position: fixed; inset: 0;
+  touch-action: none;
+  cursor: crosshair;
+}
+#grid {
+  position: absolute; inset: 0;
+  display: block;
+}
+#world {
+  position: absolute; left: 50%; top: 50%;
+  width: 0; height: 0;
+  transform-origin: 0 0;
+  visibility: hidden;            /* revealed once the engine has placed all */
+}
+body.booted #world { visibility: visible; }
+
+/* ---------------- header: the taskbar ---------------- */
+header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 14px;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--chrome-edge);
+  z-index: 10;
+}
+.wordmark {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ink-body);
+  text-transform: lowercase;
+  background: none; border: 0; padding: 6px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wordmark b { color: var(--pink); font-weight: 400; }
+#stops-nav {
+  display: flex; align-items: center; gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#stops-nav::-webkit-scrollbar { display: none; }
+.chip {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s, background .15s;
+}
+a.chip { text-decoration: none; display: inline-block; }
+.chip.cta-luma {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: #fff;
+}
+.chip.cta-luma:hover { filter: brightness(1.08); color: #fff; }
+.chip:hover { border-color: var(--ink-2); color: var(--ink-body); }
+.chip.on {
+  background: var(--ink-body);
+  border-color: var(--ink-body);
+  color: var(--sunken);
+}
+.mode-toggle {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.mode-toggle:hover { color: var(--ink-body); border-color: var(--ink-2); }
+.mode-toggle .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold) 50%, var(--paper) 50%);
+  border: 1px solid var(--line-2);
+}
+html.dark .mode-toggle .dot {
+  background: linear-gradient(135deg, var(--paper) 50%, var(--purple) 50%);
+}
+
+/* ---------------- footer HUD ---------------- */
+footer {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 10px;
+  pointer-events: none;
+  z-index: 10;
+}
+#hud {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ink-2);
+  background: var(--chrome-bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 14px;
+}
+
+#hint {
+  position: fixed; left: 50%; bottom: 52px;
+  transform: translateX(-50%);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  padding: 9px 18px;
+  z-index: 10;
+  animation: bob 2.2s ease-in-out infinite;
+  transition: opacity .5s;
+}
+#hint.gone { opacity: 0; pointer-events: none; }
+@keyframes bob { 50% { transform: translateX(-50%) translateY(-6px); } }
+
+/* ---------------- camera controls ---------------- */
+#camctl {
+  position: fixed; right: 14px; bottom: 46px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 10;
+}
+#camctl button {
+  width: 38px; height: 38px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--chrome-bg);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: var(--pane-shadow);
+}
+#camctl button:hover { color: var(--ink-body); border-color: var(--ink-2); }
+@media (pointer: coarse) { #camctl { display: none; } }
+
+#nextbtn {
+  display: none;
+  position: fixed; right: 16px; bottom: 52px;
+  width: 52px; height: 52px;
+  font-size: 22px;
+  color: #fff;
+  background: var(--pink);
+  border: 0; border-radius: 50%;
+  box-shadow: 0 10px 24px -10px rgba(239, 127, 177, .8);
+  z-index: 10;
+}
+@media (pointer: coarse) { #nextbtn { display: block; } }
+
+/* ============================================================
+   world content
+   ============================================================ */
+
+/* ---------------- home: ink straight on the desktop ---------------- */
+.stop-home { width: 1500px; pointer-events: none; }
+.home-tag {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 18px;
+}
+.home-title {
+  font-family: var(--font-brand);
+  font-size: 118px;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+  color: var(--ink-body);
+  margin: 0 0 30px;
+}
+.home-title b { color: var(--pink); font-weight: 400; }
+.home-blurb {
+  font: 500 26px/1.45 var(--font-body);
+  color: var(--ink-body);
+  margin: 0 0 34px;
+  max-width: 30em;
+}
+.home-blurb b { font-weight: 700; color: var(--ink-body); }
+.runs-list {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.runs-list span {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.16;
+  text-transform: lowercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.runs-list b { font-weight: 400; }
+.home-foot {
+  margin-top: 34px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--ink-2);
+}
+
+/* the microprint: a whole page printed at 2% scale under the litany */
+.microprint {
+  width: 560px;
+  pointer-events: none;
+  color: var(--ink-body);
+}
+.microprint h3 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  text-transform: lowercase;
+  margin: 0 0 12px;
+  color: var(--ink-body);
+}
+.microprint h3 b { color: var(--gold); font-weight: 400; }
+.microprint p {
+  font: 500 16px/1.5 var(--font-body);
+  margin: 0 0 8px;
+}
+.microprint .mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+}
+
+/* ---------------- windows ---------------- */
+.win {
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    var(--pane-shadow);
+}
+.win-title {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  background: var(--tbar, var(--silver));
+  color: #fff;
+}
+.win-title .t {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  flex: 1;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.win-title .b {
+  width: 16px; height: 14px;
+  background: var(--paper);
+  border: 1px solid rgba(97, 85, 92, 0.35);
+  font: 9px/12px var(--font-pixel);
+  color: var(--ink-body);
+  text-align: center;
+}
+.win-body { padding: 22px 24px 24px; }
+
+.win h2 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1;
+  text-transform: lowercase;
+  color: var(--ink-body);
+  margin: 0 0 18px;
+  font-weight: 400;
+}
+.win p {
+  font: 500 16px/1.55 var(--font-body);
+  color: var(--ink-body);
+  margin: 0 0 12px;
+}
+.win .mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* manifesto rules */
+.rules { margin-top: 18px; border-top: 1px solid var(--line); }
+.rules div {
+  display: flex; align-items: baseline; gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.rules .n {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--rc, var(--pink));
+}
+.rules .r {
+  font-family: var(--font-display);
+  font-size: 17px;
+  text-transform: lowercase;
+  color: var(--ink-body);
+}
+
+/* ---------------- op event windows ---------------- */
+.op-win { width: 430px; }
+.op-win img {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+}
+.op-win .win-body { padding: 16px 18px 18px; }
+.op-win h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-transform: lowercase;
+  font-weight: 400;
+  color: var(--ink-body);
+  margin: 10px 0 8px;
+}
+.op-win p {
+  font: 500 14px/1.5 var(--font-body);
+  color: var(--ink-body);
+  margin: 0 0 12px;
+}
+.status {
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+}
+.status.live { border-color: var(--sc, var(--pink)); color: var(--sc, var(--pink)); }
+
+/* ops cluster headline printed on the desktop behind the windows */
+.ops-head {
+  font-family: var(--font-display);
+  font-size: 90px;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ops-head b { color: var(--pink); font-weight: 400; }
+
+/* ---------------- crew ---------------- */
+.crew-win { width: 620px; }
+.crew-rows { border-top: 1px solid var(--line); }
+.crew-rows div {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.crew-rows .nm {
+  font-family: var(--font-display);
+  font-size: 19px;
+  text-transform: lowercase;
+  color: var(--ink-body);
+}
+.crew-rows .rl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cc, var(--ink));
+}
+
+/* ---------------- desktop decoration ---------------- */
+.deco { pointer-events: none; }
+
+.wallpaper-win { width: 460px; }
+.wallpaper-win img { display: block; width: 100%; }
+.wallpaper-win .cap {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
+/* ---------------- slopathon signup CTA ---------------- */
+.luma-btn {
+  display: block;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.4;
+  color: #fff;
+  background: var(--pink);
+  border: 1px solid var(--line-2);
+  box-shadow: 3px 3px 0 var(--ink-body);
+  padding: 15px 16px;
+  margin-top: 16px;
+  text-decoration: none;
+  transition: transform .12s, box-shadow .12s, filter .12s;
+}
+.luma-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink-body);
+  filter: brightness(1.06);
+}
+.luma-btn .sub {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.announce-win { width: 380px; }
+.announce-win h2 { font-size: 26px; }
+
+.pyr-win { width: 340px; }
+.pyr-win svg { display: block; width: 100%; height: auto; }
+
+.load-win { width: 380px; }
+.load-win .lbl {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--ink-body);
+  margin: 0 0 10px;
+}
+.load-bar {
+  display: flex; gap: 3px;
+  border: 1px solid var(--line-2);
+  padding: 3px;
+}
+.load-bar i {
+  flex: 1; height: 16px;
+  background: var(--gold);
+}
+.load-bar i.off { background: var(--line); }
+
+.err-win { width: 330px; }
+.err-win .win-body { display: flex; gap: 14px; align-items: center; }
+.err-glyph {
+  flex: 0 0 34px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font: 700 20px/34px var(--font-body);
+  text-align: center;
+}
+.err-win p { margin: 0; font-size: 14px; }
+
+.dicon {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: 110px;
+  pointer-events: none;
+}
+.dicon .px {
+  width: 44px; height: 44px;
+  background: var(--dc, var(--purple));
+  box-shadow:
+    inset -6px -6px 0 rgba(97, 85, 92, 0.18),
+    inset 6px 6px 0 rgba(255, 255, 255, 0.5);
+}
+.dicon .px.folder { clip-path: polygon(0 18%, 38% 18%, 48% 6%, 100% 6%, 100% 94%, 0 94%); }
+.dicon .px.doc { clip-path: polygon(0 0, 72% 0, 100% 24%, 100% 100%, 0 100%); }
+.dicon .px.pyra { clip-path: polygon(50% 4%, 96% 92%, 4% 92%); }
+.dicon .lbl {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--ink);
+  text-align: center;
+}
+
+/* giant faded silkscreen print on the desktop, decoration only */
+.silkprint {
+  font-family: var(--font-display);
+  font-size: 240px;
+  text-transform: lowercase;
+  color: rgba(147, 131, 140, 0.08);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------------- explore stop marker (invisible) ---------------- */
+.stop-field { width: 10px; height: 10px; visibility: hidden; }
+
+/* ---------------- noscript ---------------- */
+noscript .ns {
+  position: fixed; inset: 0;
+  background: var(--sunken);
+  color: var(--ink-body);
+  font: 500 17px/1.6 var(--font-body);
+  padding: 80px 24px;
+  text-align: center;
+  z-index: 99;
+}
+
+@media (max-width: 640px) {
+  .wordmark { font-size: 13px; }
+  .chip { padding: 5px 10px; font-size: 10px; }
+  #hud { font-size: 9px; }
+}
