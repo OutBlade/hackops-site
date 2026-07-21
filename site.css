@@ -648,4 +648,10 @@ noscript .ns {
   .home-blurb { font-size: 18px; margin: 0 0 20px; }
   .runs-list span { font-size: 24px; }
   .home-foot { font-size: 11px; margin-top: 20px; }
+
+  /* the ascii pyramid gets its own small card below the signup card,
+     not the full desktop size, but present and legibly animating */
+  .pyr-win { width: 300px; }
+  .pyr-win .win-body { padding: 10px 8px 8px; }
+  #ascii-pyr { font-size: 6px; line-height: 6px; }
 }
