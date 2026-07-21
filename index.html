@@ -107,10 +107,14 @@
     <!-- MICROPRINT: a whole page at 2% scale, hidden under the litany.
          data-hidden keeps it out of the nav, the tab order and the tour;
          the only ways in are free-zooming onto it, typing the magic word,
-         or worrying the pyramid (see engine.js) -->
+         or worrying the pyramid (see engine.js). On mobile the stacked
+         home cluster (title/signup/pyramid) now sits right on top of
+         its desktop coordinates, so both the element and the camera
+         target move well clear of it, below the pyramid card. -->
     <section class="microprint" data-stop="op000" data-label="op//000" data-hidden="1"
              data-x="6001" data-y="6062" data-scale="0.02"
-             data-vw="13" data-vh="10" data-bearing="0">
+             data-vw="13" data-vh="10" data-bearing="0"
+             data-x-m="6001" data-y-m="6800" data-cx-m="6001" data-cy-m="6800">
       <h3>op<b>//</b>000 · the microprint</h3>
       <p>You just zoomed in fifty times. This is the smallest print on the
          desktop, and only the curious ever land on it.</p>
