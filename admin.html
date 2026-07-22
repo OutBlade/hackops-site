@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>hack//ops admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Press+Start+2P&family=Hanken+Grotesk:wght@400;500;600;700&family=Fragment+Mono&display=swap" rel="stylesheet" />
+<link rel="icon" type="image/png" sizes="96x96" href="/favicon.png" />
+<link rel="stylesheet" href="site.css?v=desktop-8" />
+<style>
+  /* this page is deliberately NOT part of the camera world: it's a
+     plain scrolling utility page, just reusing the desktop's fonts,
+     colors and .win chrome so it still feels like hack//ops */
+  html, body { overflow: auto; height: auto; min-height: 100%; }
+  body { padding: 90px 16px 60px; display: flex; justify-content: center; }
+  .admin-wrap { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 24px; }
+  .admin-wrap .win { width: 100%; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
+  .field input {
+    font-family: var(--font-body); font-size: 15px; color: var(--ink-body);
+    background: var(--sunken); border: 1px solid var(--line-2);
+    padding: 10px 12px; border-radius: 4px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+  .admin-btn {
+    font-family: var(--font-pixel); font-size: 10px; letter-spacing: 0.06em;
+    color: #fff; background: var(--ink-body); border: 1px solid var(--line-2);
+    padding: 12px 16px; cursor: pointer; box-shadow: 2px 2px 0 var(--line-2);
+  }
+  .admin-btn:hover { filter: brightness(1.1); }
+  .admin-btn.danger { background: var(--red); }
+  .admin-btn.pink { background: var(--pink); }
+  .admin-btn:disabled { opacity: .5; cursor: default; }
+  .team-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .team-row .nm { font-family: var(--font-display); font-size: 16px; text-transform: lowercase; color: var(--ink-body); }
+  .team-row .count { font-family: var(--font-mono); font-size: 11px; color: var(--ink); margin-right: auto; padding-left: 10px; }
+  #msg { font-family: var(--font-mono); font-size: 12px; color: var(--ink); min-height: 1.4em; }
+  #authGate, #panel { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="index.html">hack<b>//</b>ops</a>
+  <span class="chip" style="margin-left:auto">admin</span>
+</header>
+
+<div class="admin-wrap">
+
+  <section class="win" id="authGate" style="--tbar: var(--purple)">
+    <div class="win-title"><span class="t">admin_login.exe</span></div>
+    <div class="win-body">
+      <h2>sign in</h2>
+      <div class="field"><label>email</label><input id="loginEmail" type="email" autocomplete="username" /></div>
+      <div class="field"><label>password</label><input id="loginPass" type="password" autocomplete="current-password" /></div>
+      <button class="admin-btn pink" id="loginBtn" type="button">sign in</button>
+      <p id="msg"></p>
+    </div>
+  </section>
+
+  <div id="panel">
+    <section class="win" style="--tbar: var(--sky)">
+      <div class="win-title"><span class="t">schedule.exe</span></div>
+      <div class="win-body">
+        <h2>voting window</h2>
+        <p class="mono">times are Berlin time (CET/CEST), regardless of your own timezone</p>
+        <div class="field"><label>opens</label><input id="unlockInput" type="datetime-local" /></div>
+        <div class="field"><label>closes</label><input id="expiresInput" type="datetime-local" /></div>
+        <button class="admin-btn pink" id="saveScheduleBtn" type="button">save schedule</button>
+      </div>
+    </section>
+
+    <section class="win" style="--tbar: var(--pink)">
+      <div class="win-title"><span class="t">teams.exe</span></div>
+      <div class="win-body">
+        <h2>teams</h2>
+        <div class="row">
+          <div class="field"><label>new team name</label><input id="newTeamName" type="text" placeholder="team name" /></div>
+        </div>
+        <button class="admin-btn" id="addTeamBtn" type="button">add team</button>
+        <div id="teamList" style="margin-top:18px"></div>
+      </div>
+    </section>
+
+    <button class="admin-btn danger" id="signOutBtn" type="button">sign out</button>
+  </div>
+
+</div>
+
+<script type="module">
+  import { db, auth, EVENT_ID } from "./firebase-init.js";
+  import {
+    onAuthStateChanged, signInWithEmailAndPassword, signOut
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import {
+    doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, Timestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const $ = id => document.getElementById(id);
+  const authGate = $('authGate'), panel = $('panel'), msg = $('msg');
+
+  onAuthStateChanged(auth, user => {
+    authGate.style.display = user ? 'none' : 'block';
+    panel.style.display = user ? 'flex' : 'none';
+    panel.style.flexDirection = 'column';
+    panel.style.gap = '24px';
+    if (user) { loadSchedule(); loadTeams(); }
+  });
+
+  $('loginBtn').addEventListener('click', async () => {
+    msg.textContent = 'signing in...';
+    try {
+      await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPass').value);
+      msg.textContent = '';
+    } catch (e) {
+      msg.textContent = 'sign-in failed: ' + e.code;
+    }
+  });
+  $('signOutBtn').addEventListener('click', () => signOut(auth));
+
+  // interpret a datetime-local value's raw numbers as Berlin wall-clock
+  // time (never the admin's own browser timezone), then convert to the
+  // correct UTC instant, DST-aware.
+  function berlinInputToUtc(value) {
+    const [datePart, timePart] = value.split('T');
+    const [y, mo, d] = datePart.split('-').map(Number);
+    const [h, mi] = timePart.split(':').map(Number);
+    const guessUtc = Date.UTC(y, mo - 1, d, h, mi);
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Berlin', hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+    const p = Object.fromEntries(fmt.formatToParts(new Date(guessUtc)).map(x => [x.type, x.value]));
+    const asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+    return new Date(guessUtc - (asIfUtc - guessUtc));
+  }
+  function utcToBerlinInputValue(date) {
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Berlin', hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+    const p = Object.fromEntries(fmt.formatToParts(date).map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+  }
+
+  async function loadSchedule() {
+    const snap = await getDoc(doc(db, 'events', EVENT_ID, 'config', 'vote'));
+    if (snap.exists()) {
+      $('unlockInput').value = utcToBerlinInputValue(snap.data().unlockAt.toDate());
+      $('expiresInput').value = utcToBerlinInputValue(snap.data().expiresAt.toDate());
+    }
+  }
+  $('saveScheduleBtn').addEventListener('click', async () => {
+    const unlockAt = berlinInputToUtc($('unlockInput').value);
+    const expiresAt = berlinInputToUtc($('expiresInput').value);
+    if (expiresAt <= unlockAt) { msg.textContent = 'close time must be after open time'; return; }
+    await setDoc(doc(db, 'events', EVENT_ID, 'config', 'vote'), {
+      unlockAt: Timestamp.fromDate(unlockAt),
+      expiresAt: Timestamp.fromDate(expiresAt)
+    });
+    msg.textContent = 'schedule saved.';
+  });
+
+  async function loadTeams() {
+    const list = $('teamList');
+    list.innerHTML = 'loading...';
+    const [teamDocs, tallyDocs] = await Promise.all([
+      getDocs(collection(db, 'events', EVENT_ID, 'teams')),
+      getDocs(collection(db, 'events', EVENT_ID, 'tallies'))
+    ]);
+    const counts = Object.fromEntries(tallyDocs.docs.map(d => [d.id, d.data().count || 0]));
+    if (!teamDocs.size) { list.innerHTML = '<p class="mono">no teams yet</p>'; return; }
+    list.innerHTML = '';
+    teamDocs.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'team-row';
+      row.innerHTML = `<span class="nm">${d.data().name}</span><span class="count">${counts[d.id] ?? 0} votes</span>`;
+      const del = document.createElement('button');
+      del.className = 'admin-btn danger';
+      del.textContent = 'remove';
+      del.addEventListener('click', async () => {
+        if (!confirm(`Remove "${d.data().name}"? This deletes its votes too.`)) return;
+        await deleteDoc(doc(db, 'events', EVENT_ID, 'teams', d.id));
+        await deleteDoc(doc(db, 'events', EVENT_ID, 'tallies', d.id));
+        loadTeams();
+      });
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  $('addTeamBtn').addEventListener('click', async () => {
+    const name = $('newTeamName').value.trim();
+    if (!name) return;
+    const batch = writeBatch(db);
+    const ref = doc(collection(db, 'events', EVENT_ID, 'teams'));
+    batch.set(ref, { name, createdAt: Timestamp.now() });
+    batch.set(doc(db, 'events', EVENT_ID, 'tallies', ref.id), { count: 0 });
+    await batch.commit();
+    $('newTeamName').value = '';
+    loadTeams();
+  });
+</script>
+</body>
+</html>

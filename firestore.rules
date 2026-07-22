@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// hack//ops vote system. Namespaced per event so this same schema can be
+// reused for future operations without collisions or deleting old results.
+//
+// events/{eventId}/config/vote   { unlockAt: Timestamp, expiresAt: Timestamp }
+// events/{eventId}/teams/{id}    { name: string, createdAt: Timestamp }
+// events/{eventId}/tallies/{id}  { count: number }  -- same doc id as its team
+//
+// Voting itself needs no login (frictionless for attendees). The admin
+// panel is gated by Firebase Auth (one shared account). All real timing
+// enforcement happens here via request.time, which is the Firestore
+// server clock and cannot be spoofed by a visitor's device clock --
+// the client-side countdown/lock UI is cosmetic only.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{eventId} {
+
+      function voteConfig() {
+        return get(/databases/$(database)/documents/events/$(eventId)/config/vote).data;
+      }
+      function isAdmin() {
+        return request.auth != null;
+      }
+
+      match /config/{doc} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /teams/{teamId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      // tallies are pre-created by the admin alongside each team (count: 0)
+      // in the same batch, so voting is always an update, never a create.
+      match /tallies/{teamId} {
+        // a single doc fetch is always allowed -- this is what the voting
+        // transaction itself needs to read the current count before
+        // incrementing it. It does NOT expose the standings collection.
+        allow get: if true;
+
+        // querying/sorting the whole collection (the leaderboard) is
+        // blocked for the public until voting has actually closed; the
+        // admin panel can always see live counts to monitor turnout.
+        allow list: if isAdmin() || request.time > voteConfig().expiresAt;
+
+        allow create: if isAdmin();
+        allow delete: if isAdmin();
+
+        // the only public write allowed: exactly a +1 to count, and
+        // only strictly inside the open voting window.
+        allow update: if
+          request.time > voteConfig().unlockAt &&
+          request.time < voteConfig().expiresAt &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count']) &&
+          request.resource.data.count == resource.data.count + 1;
+      }
+    }
+  }
+}

@@ -542,6 +542,63 @@ footer {
 .announce-win .luma-btn { font-size: 15px; padding: 20px; }
 .announce-win .luma-btn .sub { font-size: 12px; }
 
+/* ---------------- op//002 vote widget ---------------- */
+.vote-win { width: 400px; }
+.vote-h {
+  font-family: var(--font-display);
+  font-size: 26px;
+  text-transform: lowercase;
+  font-weight: 400;
+  color: var(--ink-body);
+  margin: 6px 0 10px;
+}
+.vote-countdown {
+  font-family: var(--font-mono);
+  font-size: 34px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+}
+.vote-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  margin-top: 10px;
+}
+.vote-teams {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 4px;
+  max-height: 300px; overflow-y: auto;
+}
+.vote-team-btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  text-align: left;
+  color: var(--ink-body);
+  background: var(--sunken);
+  border: 1px solid var(--line-2);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.vote-team-btn:hover:not(:disabled) { border-color: var(--gold); }
+.vote-team-btn:disabled { opacity: 0.55; cursor: default; }
+.vote-results { margin-top: 8px; border-top: 1px solid var(--line); }
+.vote-results-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-body);
+}
+.vote-results-rank { color: var(--ink); width: 1.5em; }
+.vote-results-name { flex: 1; font-family: var(--font-display); font-size: 15px; text-transform: lowercase; }
+.vote-results-count { color: var(--ink); }
+.vote-results-win { color: var(--gold); }
+.vote-results-win .vote-results-rank,
+.vote-results-win .vote-results-count { color: var(--gold); }
+
 .pyr-win { width: 440px; cursor: default; }
 .pyr-win .win-body { padding: 12px 10px 10px; }
 #ascii-pyr {
@@ -654,4 +711,7 @@ noscript .ns {
   .pyr-win { width: 300px; }
   .pyr-win .win-body { padding: 10px 8px 8px; }
   #ascii-pyr { font-size: 6px; line-height: 6px; }
+
+  .vote-win { width: 340px; }
+  .vote-countdown { font-size: 28px; }
 }
