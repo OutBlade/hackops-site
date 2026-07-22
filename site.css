@@ -565,24 +565,31 @@ footer {
   color: var(--ink);
   margin-top: 10px;
 }
-.vote-teams {
-  display: flex; flex-direction: column; gap: 8px; margin-top: 4px;
-  max-height: 300px; overflow-y: auto;
-}
-.vote-team-btn {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 15px;
-  text-align: left;
-  color: var(--ink-body);
-  background: var(--sunken);
+/* the in-world card while voting is open: one button, nothing to
+   miss-tap. The real choice happens in the fixed-position modal
+   below, which is legible at any camera zoom on any screen size. */
+.vote-cta-btn {
+  display: block;
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: #fff;
+  background: var(--gold);
   border: 1px solid var(--line-2);
-  padding: 12px 14px;
+  box-shadow: 3px 3px 0 var(--ink-body);
+  padding: 16px;
+  margin-top: 10px;
   cursor: pointer;
-  transition: border-color .12s, background .12s;
+  transition: transform .12s, box-shadow .12s, filter .12s;
 }
-.vote-team-btn:hover:not(:disabled) { border-color: var(--gold); }
-.vote-team-btn:disabled { opacity: 0.55; cursor: default; }
+.vote-cta-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink-body);
+  filter: brightness(1.05);
+}
+.vote-cta-btn:disabled { opacity: 0.6; cursor: default; box-shadow: 3px 3px 0 var(--ink-body); transform: none; }
 .vote-results { margin-top: 8px; border-top: 1px solid var(--line); }
 .vote-results-row {
   display: flex; align-items: center; gap: 10px;
@@ -598,6 +605,117 @@ footer {
 .vote-results-win { color: var(--gold); }
 .vote-results-win .vote-results-rank,
 .vote-results-win .vote-results-count { color: var(--gold); }
+
+/* ---------------- vote confirmation modal ----------------
+   Fixed to the viewport, outside the camera world entirely, so it
+   renders at a real, generous size on every screen -- this is the
+   whole "more visible on mobile" fix: nothing here is ever shrunk
+   by the desktop's zoom level. */
+.vote-modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(10, 8, 11, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.vote-modal-backdrop.open { display: flex; }
+.vote-modal {
+  width: min(94vw, 440px);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+.vote-modal .win-body {
+  overflow-y: auto;
+  padding: 26px 24px 24px;
+}
+.vote-modal .win-title .b { cursor: pointer; }
+.vote-modal .mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+.vote-modal-teams {
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 44vh; overflow-y: auto;
+}
+.vote-modal-team-btn {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 17px;
+  text-align: left;
+  color: var(--ink-body);
+  background: var(--sunken);
+  border: 2px solid var(--line-2);
+  border-radius: 4px;
+  padding: 16px;
+  min-height: 56px;
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.vote-modal-team-btn:hover:not(:disabled) { border-color: var(--ink-2); }
+.vote-modal-team-btn .radio {
+  flex: 0 0 auto;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--ink-2);
+  background: var(--paper);
+}
+.vote-modal-team-btn.picked {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, var(--sunken));
+}
+.vote-modal-team-btn.picked .radio {
+  border-color: var(--gold);
+  background: var(--gold);
+  box-shadow: inset 0 0 0 3px var(--sunken);
+}
+.vote-modal-team-btn:disabled { opacity: 0.6; cursor: default; }
+.vote-modal-confirm {
+  display: block;
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  color: #fff;
+  background: var(--gold);
+  border: 1px solid var(--line-2);
+  box-shadow: 3px 3px 0 var(--ink-body);
+  padding: 18px;
+  margin-top: 20px;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s, filter .12s;
+}
+.vote-modal-confirm:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink-body);
+}
+.vote-modal-confirm:disabled { opacity: 0.45; cursor: default; box-shadow: none; transform: none; }
+.vote-modal-cancel {
+  display: block;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 14px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.vote-modal-cancel:hover { color: var(--ink-body); }
 
 .pyr-win { width: 440px; cursor: default; }
 .pyr-win .win-body { padding: 12px 10px 10px; }
@@ -714,4 +832,12 @@ noscript .ns {
 
   .vote-win { width: 340px; }
   .vote-countdown { font-size: 28px; }
+
+  /* the confirm modal is already viewport-sized, not world-scaled --
+     on phones just make everything inside it a little bigger and
+     easier to thumb through */
+  .vote-modal { width: min(96vw, 440px); }
+  .vote-modal .win-body { padding: 24px 20px 22px; }
+  .vote-modal-team-btn { font-size: 18px; padding: 18px; min-height: 60px; }
+  .vote-modal-confirm { font-size: 14px; padding: 20px; }
 }

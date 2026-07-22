@@ -3,7 +3,15 @@
    A small state machine (locked -> open -> closed) rendered into
    #vote-body. Real enforcement of the window lives in Firestore
    Security Rules (server clock); this file only decides what to
-   show and, while open, submits one transactional +1 per click.
+   show and, while open, submits one transactional +1 per confirmed
+   vote.
+
+   Voting itself is a two-step, deliberate flow: the in-world card
+   shows a single "vote now" button (nothing to fat-finger); tapping
+   it opens a fixed-position confirmation modal -- outside the camera
+   world, so it renders at a real, full size on any screen -- where a
+   team must be picked AND a separate confirm button pressed before
+   anything is written.
    ============================================================ */
 import { db, EVENT_ID } from "./firebase-init.js";
 import {
@@ -88,33 +96,107 @@ async function renderOpen() {
     return;
   }
   const teams = teamDocs.docs.map(d => ({ id: d.id, name: d.data().name }));
-  const voted = localStorage.getItem(VOTED_KEY);
 
   if (!teams.length) {
     root.innerHTML = `<p class="mono">status: open</p><p>No teams registered yet. Check back soon.</p>`;
     return;
   }
 
-  root.innerHTML = `
-    <p class="mono">status: open</p>
-    <h3 class="vote-h">vote for your favorite build</h3>
-    <div class="vote-teams">
-      ${teams.map(t => `<button type="button" class="vote-team-btn" data-team="${t.id}" data-interactive
-          ${voted ? 'disabled' : ''}>${escapeHtml(t.name)}</button>`).join('')}
-    </div>
-    <p class="vote-sub" id="vote-msg">${voted ? "you've already voted from this device. thanks!" : 'one vote per device.'}</p>
-  `;
-
-  root.querySelectorAll('.vote-team-btn').forEach(btn => {
-    btn.addEventListener('click', () => castVote(btn.dataset.team, teams));
-  });
+  paintCardForVoteState(teams);
 }
 
+// the in-world card: just a button, whatever the local vote state is
+function paintCardForVoteState(teams) {
+  const voted = localStorage.getItem(VOTED_KEY);
+  const votedTeam = voted && teams.find(t => t.id === voted);
+  root.innerHTML = voted
+    ? `<p class="mono">status: open</p>
+       <h3 class="vote-h">you voted</h3>
+       <p class="vote-sub">${votedTeam ? 'for ' + escapeHtml(votedTeam.name) + '. ' : ''}thanks for backing a build.</p>
+       <button type="button" class="vote-cta-btn" disabled>vote cast</button>`
+    : `<p class="mono">status: open</p>
+       <h3 class="vote-h">vote for your favorite build</h3>
+       <p class="vote-sub">one tap opens a confirmation -- no accidental votes.</p>
+       <button type="button" class="vote-cta-btn" id="vote-open-btn" data-interactive>vote now</button>`;
+
+  const openBtn = document.getElementById('vote-open-btn');
+  if (openBtn) openBtn.addEventListener('click', () => openModal(teams));
+}
+
+/* ---------------- confirmation modal ---------------- */
+const backdrop = document.getElementById('vote-modal-backdrop');
+const modalTeams = document.getElementById('vote-modal-teams');
+const modalConfirm = document.getElementById('vote-modal-confirm');
+const modalCancel = document.getElementById('vote-modal-cancel');
+const modalClose = document.getElementById('vote-modal-close');
+const modalStep = document.getElementById('vote-modal-step');
+const modalMsg = document.getElementById('vote-modal-msg');
+
+let modalTeamsData = [];
+let pickedTeamId = null;
+let voteInFlight = false;
+let modalOpenedAt = 0;
+let pickedAt = 0;
+// no real human moves from "modal just appeared" to "team tapped" to
+// "confirm tapped" faster than this; guards against any input burst
+// (double-fire, stray replayed event, etc.) chaining select+confirm
+// into a single accidental vote -- the whole point of this modal.
+const MIN_STEP_MS = 250;
+
+function openModal(teams) {
+  if (!backdrop) return;
+  modalTeamsData = teams;
+  pickedTeamId = null;
+  voteInFlight = false;
+  modalOpenedAt = performance.now();
+  pickedAt = 0;
+  modalMsg.textContent = '';
+  modalStep.textContent = 'pick a team, then confirm';
+  modalConfirm.disabled = true;
+  modalConfirm.textContent = 'confirm vote';
+  modalTeams.innerHTML = teams.map(t => `
+    <button type="button" class="vote-modal-team-btn" data-team="${t.id}" data-interactive>
+      <span class="radio" aria-hidden="true"></span>${escapeHtml(t.name)}
+    </button>`).join('');
+  modalTeams.querySelectorAll('.vote-modal-team-btn').forEach(btn => {
+    btn.addEventListener('click', () => pickTeam(btn.dataset.team));
+  });
+  backdrop.classList.add('open');
+}
+
+function closeModal() {
+  if (voteInFlight) return; // a vote is mid-flight, do not let it get abandoned mid-write
+  backdrop.classList.remove('open');
+}
+
+function pickTeam(teamId) {
+  if (performance.now() - modalOpenedAt < MIN_STEP_MS) return; // too soon after opening to be a deliberate tap
+  pickedTeamId = teamId;
+  pickedAt = performance.now();
+  modalTeams.querySelectorAll('.vote-modal-team-btn').forEach(btn => {
+    btn.classList.toggle('picked', btn.dataset.team === teamId);
+  });
+  const team = modalTeamsData.find(t => t.id === teamId);
+  modalConfirm.disabled = false;
+  modalConfirm.textContent = `confirm vote for ${team ? team.name : 'this team'}`;
+}
+
+if (modalConfirm) modalConfirm.addEventListener('click', () => {
+  if (!pickedTeamId) return;
+  if (performance.now() - pickedAt < MIN_STEP_MS) return; // too soon after picking to be a deliberate confirm
+  castVote(pickedTeamId, modalTeamsData);
+});
+if (modalCancel) modalCancel.addEventListener('click', closeModal);
+if (modalClose) modalClose.addEventListener('click', closeModal);
+if (backdrop) backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
 async function castVote(teamId, teams) {
-  if (localStorage.getItem(VOTED_KEY)) return;
-  root.querySelectorAll('.vote-team-btn').forEach(b => b.disabled = true);
-  const msg = document.getElementById('vote-msg');
-  if (msg) msg.textContent = 'casting vote...';
+  if (localStorage.getItem(VOTED_KEY) || voteInFlight) return;
+  voteInFlight = true;
+  modalTeams.querySelectorAll('.vote-modal-team-btn').forEach(b => b.disabled = true);
+  modalConfirm.disabled = true;
+  modalStep.textContent = 'casting vote...';
   try {
     const ref = doc(db, 'events', EVENT_ID, 'tallies', teamId);
     await runTransaction(db, async tx => {
@@ -124,10 +206,17 @@ async function castVote(teamId, teams) {
     });
     localStorage.setItem(VOTED_KEY, teamId);
     const team = teams.find(t => t.id === teamId);
-    if (msg) msg.textContent = `voted for ${team ? team.name : 'your pick'}. thanks!`;
+    modalStep.textContent = 'vote cast';
+    modalMsg.textContent = `voted for ${team ? team.name : 'your pick'}. thanks!`;
+    voteInFlight = false;
+    paintCardForVoteState(teams);
+    setTimeout(closeModal, 1400);
   } catch (e) {
-    if (msg) msg.textContent = 'vote did not go through -- voting may have just closed.';
-    root.querySelectorAll('.vote-team-btn').forEach(b => b.disabled = !!localStorage.getItem(VOTED_KEY));
+    voteInFlight = false;
+    modalStep.textContent = 'pick a team, then confirm';
+    modalMsg.textContent = 'vote did not go through -- voting may have just closed.';
+    modalTeams.querySelectorAll('.vote-modal-team-btn').forEach(b => b.disabled = false);
+    modalConfirm.disabled = !pickedTeamId;
   }
 }
 

@@ -326,7 +326,27 @@
   <button id="lvl" type="button" title="Level the camera">&deg;</button>
 </div>
 
+<!-- op//002 vote confirmation: a fixed overlay, NOT part of the camera
+     world, so it is always full and legible regardless of zoom -- this
+     is what makes it "more visible on mobile" for free. Pick a team,
+     see the confirmation state, only then does the vote get cast. -->
+<div id="vote-modal-backdrop" class="vote-modal-backdrop" data-interactive>
+  <div class="win vote-modal" style="--tbar: var(--gold)" role="dialog" aria-modal="true" aria-labelledby="vote-modal-title">
+    <div class="win-title">
+      <span class="t" id="vote-modal-title">op002_confirm.exe</span>
+      <span class="b" id="vote-modal-close" role="button" tabindex="0" aria-label="Close">&times;</span>
+    </div>
+    <div class="win-body">
+      <p class="mono" id="vote-modal-step">pick a team</p>
+      <div class="vote-modal-teams" id="vote-modal-teams"></div>
+      <button class="vote-modal-confirm" id="vote-modal-confirm" type="button" disabled>confirm vote</button>
+      <button class="vote-modal-cancel" id="vote-modal-cancel" type="button">cancel</button>
+      <p class="vote-sub" id="vote-modal-msg"></p>
+    </div>
+  </div>
+</div>
+
 <script src="engine.js?v=desktop-5"></script>
-<script type="module" src="vote.js?v=1"></script>
+<script type="module" src="vote.js?v=3"></script>
 </body>
 </html>
