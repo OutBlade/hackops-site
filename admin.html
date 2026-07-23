@@ -70,6 +70,7 @@
         <div class="field"><label>opens</label><input id="unlockInput" type="datetime-local" /></div>
         <div class="field"><label>closes</label><input id="expiresInput" type="datetime-local" /></div>
         <button class="admin-btn pink" id="saveScheduleBtn" type="button">save schedule</button>
+        <p id="schedMsg" class="mono" style="min-height:1.4em;margin-top:12px"></p>
       </div>
     </section>
 
@@ -146,22 +147,53 @@
     return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
   }
 
+  const schedMsg = $('schedMsg');
+
   async function loadSchedule() {
-    const snap = await getDoc(doc(db, 'events', EVENT_ID, 'config', 'vote'));
-    if (snap.exists()) {
-      $('unlockInput').value = utcToBerlinInputValue(snap.data().unlockAt.toDate());
-      $('expiresInput').value = utcToBerlinInputValue(snap.data().expiresAt.toDate());
+    try {
+      const snap = await getDoc(doc(db, 'events', EVENT_ID, 'config', 'vote'));
+      if (snap.exists()) {
+        $('unlockInput').value = utcToBerlinInputValue(snap.data().unlockAt.toDate());
+        $('expiresInput').value = utcToBerlinInputValue(snap.data().expiresAt.toDate());
+      }
+    } catch (e) {
+      console.error('loadSchedule failed', e);
+      schedMsg.textContent = 'could not load current schedule: ' + (e.code || e.message);
     }
   }
+
   $('saveScheduleBtn').addEventListener('click', async () => {
-    const unlockAt = berlinInputToUtc($('unlockInput').value);
-    const expiresAt = berlinInputToUtc($('expiresInput').value);
-    if (expiresAt <= unlockAt) { msg.textContent = 'close time must be after open time'; return; }
-    await setDoc(doc(db, 'events', EVENT_ID, 'config', 'vote'), {
-      unlockAt: Timestamp.fromDate(unlockAt),
-      expiresAt: Timestamp.fromDate(expiresAt)
-    });
-    msg.textContent = 'schedule saved.';
+    const btn = $('saveScheduleBtn');
+    const unlockRaw = $('unlockInput').value;
+    const expiresRaw = $('expiresInput').value;
+
+    // empty datetime fields used to make the converter throw silently,
+    // leaving the button looking completely dead. Fail loudly instead.
+    if (!unlockRaw || !expiresRaw) {
+      schedMsg.textContent = 'both open and close times are required.';
+      return;
+    }
+    const unlockAt = berlinInputToUtc(unlockRaw);
+    const expiresAt = berlinInputToUtc(expiresRaw);
+    if (expiresAt <= unlockAt) { schedMsg.textContent = 'close time must be after open time.'; return; }
+
+    btn.disabled = true;
+    schedMsg.textContent = 'saving...';
+    try {
+      await setDoc(doc(db, 'events', EVENT_ID, 'config', 'vote'), {
+        unlockAt: Timestamp.fromDate(unlockAt),
+        expiresAt: Timestamp.fromDate(expiresAt)
+      });
+      // read it straight back so "saved" means it actually persisted
+      await loadSchedule();
+      schedMsg.textContent = 'schedule saved. opens ' + unlockRaw.replace('T', ' ')
+        + ', closes ' + expiresRaw.replace('T', ' ') + ' (Berlin).';
+    } catch (e) {
+      console.error('saveSchedule failed', e);
+      schedMsg.textContent = 'save failed: ' + (e.code || e.message);
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   async function loadTeams() {
